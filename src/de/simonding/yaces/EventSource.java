@@ -1,5 +1,7 @@
 package de.simonding.yaces;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,16 +10,15 @@ import java.util.Vector;
 
 
 public class EventSource {
-	HashMap<String, List<EventListener>> events = new HashMap<>();
+	private HashMap<String, List<EventListener<? extends Event>>> events = new HashMap<>();
 	
-	public synchronized <E> void addEventListener(EventListener<E> listener, Class<E> eventClass) throws InvalidParameterException{
-		chekIfValid(eventClass);
+	public synchronized <T extends Event> void addEventListener(EventListener<T> listener, Class<T> eventClass) {
 		
 		String key = eventClass.getName();
 		
 		//Create List if not done already
 		if(!events.containsKey(key)){
-			List<EventListener> value = new Vector<>();
+			List<EventListener<? extends Event>> value = new Vector<>();
 			events.put(key, value);
 		}
 		
@@ -25,9 +26,7 @@ public class EventSource {
 		events.get(key).add(listener);
 	}
 	
-	public synchronized <E> void removeListener(EventListener<E> listener, Class<E> eventClass) throws InvalidParameterException {
-		chekIfValid(eventClass);
-		
+	public synchronized <T extends Event> void removeListener(EventListener<T> listener, Class<T> eventClass) {
 		String key = eventClass.getName();
 		
 		//Remove Listener from List
@@ -39,23 +38,13 @@ public class EventSource {
 		}
 	}
 	
-	/**
-	 * Checks if the type variable of the listener is a subclass of de.simonding.yaces.Event.
-	 * This can and has to be done by using the eventClass parameter because type variables seem not to be accessible during runtime.
-	 */
-	private <E> void chekIfValid(Class<E> eventClass) throws InvalidParameterException {
-		if(!Event.class.isAssignableFrom(eventClass)){
-			throw new InvalidParameterException("The type variable of the listener must be a subclass of de.simonding.yaces.Event");
-		}
-	}
-	
-	public synchronized void fireEvent(Event e){
-		String key = e.getClass().getName();
+	public synchronized <T extends Event> void fireEvent(T event){
+		String key = event.getClass().getName();
 		if(events.containsKey(key)){
-			Iterator<EventListener> i = events.get(key).iterator();
+			Iterator<EventListener<? extends Event>> i = events.get(key).iterator();
 			while(i.hasNext()){
-				EventListener<Event> el = i.next();
-				el.receiveEvent(e);
+				
+				i.next().receiveEvent(event); //Compiler Error
 			}
 		}
 	}
