@@ -8,7 +8,7 @@ public class MyEvent extends Event {
 	private static final long serialVersionUID = 5220698149052196529L;
 
 	public MyEvent(EventSource source) {
-		super(source);
+		super(source, false);
 	}
 
 }
